@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,7 +34,7 @@ public class SAP {
         ArrayList<Integer> wArr = new ArrayList<Integer>();
         wArr.add(w);
 
-        return anc(vArr, wArr, new HashSet<Integer>(), 0, 0).len;
+        return anc(vArr, wArr, new HashMap<Integer, Integer>(), new HashMap<Integer, Integer>(), 0, 0).len;
     }
 
     // a common ancestor of v and w that participates in a shortest ancestral path; -1 if no such path
@@ -44,36 +45,41 @@ public class SAP {
         ArrayList<Integer> wArr = new ArrayList<Integer>();
         wArr.add(w);
 
-        return anc(vArr, wArr, new HashSet<Integer>(), 0, 0).node;
+        return anc(vArr, wArr, new HashMap<Integer, Integer>(), new HashMap<Integer, Integer>(), 0, 0).node;
     }
 
     // length of shortest ancestral path between any vertex in v and any vertex in w; -1 if no such path
     public int length(Iterable<Integer> v, Iterable<Integer> w) {
-        return anc(v, w, new HashSet<Integer>(), 0, 0).len;
+        return anc(v, w, new HashMap<Integer, Integer>(), new HashMap<Integer, Integer>(), 0, 0).len;
     }
 
     // a common ancestor that participates in shortest ancestral path; -1 if no such path
     public int ancestor(Iterable<Integer> v, Iterable<Integer> w) {
-        return anc(v, w, new HashSet<Integer>(), 0, 0).node;
+        return anc(v, w, new HashMap<Integer, Integer>(), new HashMap<Integer, Integer>(), 0, 0).node;
     }
 
     public Tuple anc(
             Iterable<Integer> v,
             Iterable<Integer> w,
-            Set<Integer> commonNodes,
+            HashMap<Integer, Integer> commonV,
+            HashMap<Integer, Integer> commonW,
             Integer vCount,
             Integer wCount) {
 
         for (Integer currV : v) {
-            if (commonNodes.contains(v))
-                return new Tuple(currV, vCount + wCount);
-            commonNodes.add(currV);
+            if (commonW.containsKey(currV))
+                return new Tuple(currV, commonW.get(currV) + vCount);
+            if (!commonV.containsKey(currV)) {
+                commonV.put(currV, vCount);
+            }
         }
 
         for (Integer currW : w) {
-            if (commonNodes.contains(w))
-                return new Tuple(currW, vCount + wCount);
-            commonNodes.add(currW);
+            if (commonV.containsKey(currW))
+                return new Tuple(currW, commonV.get(currW) + wCount);
+            if (!commonW.containsKey(currW)) {
+                commonW.put(currW, wCount);
+            }
         }
 
         Iterable<Integer> vParents = getAllParents(v);
@@ -82,12 +88,13 @@ public class SAP {
         boolean vHasParent = vParents.iterator().hasNext();
         boolean wHasParent = wParents.iterator().hasNext();
 
-        if (!vHasParent && !wHasParent) return new Tuple();
+        if (!vHasParent && !wHasParent)
+            return new Tuple();
 
         if (vHasParent) vCount++;
         if (wHasParent) wCount++;
 
-        return anc(vParents, wParents, commonNodes, vCount, wCount);
+        return anc(vParents, wParents, commonV, commonW, vCount, wCount);
     }
 
     public Iterable<Integer> getAllParents(Iterable<Integer> vertexes) {
